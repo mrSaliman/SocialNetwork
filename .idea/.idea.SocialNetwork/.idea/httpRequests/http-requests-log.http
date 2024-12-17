@@ -1,0 +1,104 @@
+﻿POST http://127.0.0.1:8080/login
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password921"}
+
+<> 2024-10-30T123721.401.txt
+
+###
+
+POST http://127.0.0.1:8080/login
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password911"}
+
+<> 2024-10-30T123659.200.json
+
+###
+
+POST http://127.0.0.1:8080/login
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password911"}
+
+<> 2024-10-30T123613.200.json
+
+###
+
+POST http://127.0.0.1:8080/login
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password911"}
+
+<> 2024-10-30T123551.200.json
+
+###
+
+POST http://127.0.0.1:8080/login
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password911"}
+
+<> 2024-10-30T123335.200.json
+
+###
+
+POST http://127.0.0.1:8080/register
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password911"}
+
+<> 2024-10-30T121301.200.txt
+
+###
+
+POST http://127.0.0.1:8080/register
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password911"}
+
+<> 2024-10-30T115633.409.txt
+
+###
+
+POST http://127.0.0.1:8080/register
+Content-Type: application/json
+Content-Length: 50
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+{"Username": "sal", "PasswordHash": "password911"}
+
+<> 2024-10-30T114749.409.txt
+
+###
+
