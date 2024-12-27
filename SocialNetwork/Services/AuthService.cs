@@ -3,13 +3,13 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using SocialNetwork.Data;
-using SocialNetwork.Models.Auth;
+using SocialNetwork.Models;
 
 namespace SocialNetwork.Services;
 
-public class AuthService(string jwtKey)
+public class AuthService(string jwtKey, string connectionString)
 {
-    private readonly AuthRepository _authRepository = new(@"Data Source=D:\Univ\COURSACHS\NAP\SocialNetwork\SocialNetwork\DB\Auth.db");
+    private readonly AuthRepository _authRepository = new(connectionString);
 
     public bool Register(string username, string password)
     {
@@ -26,7 +26,9 @@ public class AuthService(string jwtKey)
             return null;
         }
 
-        return GenerateJwtToken(user.Username);
+        var token = GenerateJwtToken(user.Username);
+        Console.WriteLine(token);
+        return token;
     }
 
     private string? GenerateJwtToken(string username)
@@ -45,11 +47,44 @@ public class AuthService(string jwtKey)
             {
                 new(ClaimTypes.Name, username)
             }),
-            Expires = DateTime.UtcNow.AddHours(1),
+            Expires = DateTime.UtcNow.AddHours(24),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
+    }
+
+    public User? ValidateToken(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.ASCII.GetBytes(jwtKey);
+        var jwt = tokenHandler.ReadJwtToken(token);
+        Console.WriteLine($"Algorithm: {jwt.Header["alg"]}");
+
+        try
+        {
+            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false, 
+                ValidateAudience = false, 
+                ClockSkew = TimeSpan.Zero 
+            }, out var validatedToken);
+
+            if (validatedToken is not JwtSecurityToken jwtToken ||
+                !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return null;
+            }
+
+            var usernameClaim = principal.FindFirst(ClaimTypes.Name);
+            return usernameClaim == null ? null : _authRepository.GetUserByUsername(usernameClaim.Value);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

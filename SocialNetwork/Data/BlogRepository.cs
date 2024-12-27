@@ -25,4 +25,30 @@ public class BlogRepository(string connectionString)
             return false;
         }
     }
+    
+    public List<BlogPost> GetPosts(int userId)
+    {
+        using var connection = new SQLiteConnection(connectionString);
+        connection.Open();
+
+        var command = new SQLiteCommand("SELECT AuthorId, Content, Timestamp FROM BlogPosts WHERE AuthorId = @userId;", connection);
+    
+        command.Parameters.AddWithValue("@userId", userId);
+
+        var reader = command.ExecuteReader();
+
+        var posts = new List<BlogPost>();
+        while (reader.Read())
+        {
+            posts.Add(new BlogPost
+            {
+                AuthorId = reader.GetInt32(0),
+                Content = reader.GetString(1),
+                Timestamp = reader.GetDateTime(2)
+            });
+        }
+
+        return posts;
+    }
+
 }

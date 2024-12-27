@@ -3,9 +3,9 @@
 using SocialNetwork.Data;
 using SocialNetwork.Models;
 
-public class BlogService
+public class BlogService(string connectionString)
 {
-    private readonly BlogRepository _blogRepository = new(@"Data Source=D:\Univ\COURSACHS\NAP\SocialNetwork\SocialNetwork\DB\SocialNetwork.db");
+    private readonly BlogRepository _blogRepository = new(connectionString);
 
     public bool CreatePost(int authorId, string content)
     {
@@ -18,4 +18,6 @@ public class BlogService
 
         return _blogRepository.CreatePost(post);
     }
+    
+    public List<BlogPost> GetAllPosts(int userId) => _blogRepository.GetPosts(userId);
 }

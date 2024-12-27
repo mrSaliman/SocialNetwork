@@ -3,19 +3,27 @@
 using SocialNetwork.Data;
 using SocialNetwork.Models;
 
-public class GroupService
+public class GroupService(string connectionString)
 {
-    private readonly GroupRepository _groupRepository = new(@"Data Source=D:\Univ\COURSACHS\NAP\SocialNetwork\SocialNetwork\DB\SocialNetwork.db");
+    private readonly GroupRepository _groupRepository = new(connectionString);
 
-    public bool CreateGroup(string name)
+    public bool CreateGroup(string name, int creatorId)
     {
         var group = new Group { Name = name };
-        return _groupRepository.CreateGroup(group);
+        var created = _groupRepository.CreateGroup(group);
+        if (created)
+        {
+            AddMember(name, creatorId);
+        }
+
+        return created;
     }
 
-    public bool AddMember(int groupId, int userId)
+    public bool AddMember(string groupName, int userId)
     {
-        var member = new GroupMember { GroupId = groupId, UserId = userId };
+        var groupId = _groupRepository.GetGroupIdByName(groupName);
+        if (!groupId.HasValue) return false;
+        var member = new GroupMember { GroupId = groupId.Value, UserId = userId };
         return _groupRepository.AddMember(member);
     }
 }

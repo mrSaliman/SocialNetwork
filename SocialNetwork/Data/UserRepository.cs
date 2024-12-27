@@ -67,4 +67,54 @@ public class UserRepository(string connectionString)
             return false;
         }
     }
+    
+    public List<User> GetFriends(int userId)
+    {
+        using var connection = new SQLiteConnection(connectionString);
+        connection.Open();
+
+        using var command = new SQLiteCommand(connection);
+        command.CommandText = @"SELECT u.Id, u.Username FROM Users u 
+                                INNER JOIN Friends f ON u.Id = f.FriendId 
+                                WHERE f.UserId = @userId";
+        command.Parameters.AddWithValue("@userId", userId);
+
+        var friends = new List<User>();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            friends.Add(new User
+            {
+                Id = reader.GetInt32(0),
+                Username = reader.GetString(1)
+            });
+        }
+
+        return friends;
+    }
+
+    public List<User> GetBlockedUsers(int userId)
+    {
+        using var connection = new SQLiteConnection(connectionString);
+        connection.Open();
+
+        using var command = new SQLiteCommand(connection);
+        command.CommandText = @"SELECT u.Id, u.Username FROM Users u 
+                                INNER JOIN BlockedUsers b ON u.Id = b.BlockedUserId 
+                                WHERE b.UserId = @userId";
+        command.Parameters.AddWithValue("@userId", userId);
+
+        var blockedUsers = new List<User>();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            blockedUsers.Add(new User
+            {
+                Id = reader.GetInt32(0),
+                Username = reader.GetString(1)
+            });
+        }
+
+        return blockedUsers;
+    }
 }

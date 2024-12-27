@@ -1,13 +1,149 @@
-﻿POST http://127.0.0.1:8080/login
-Content-Type: application/json
-Content-Length: 50
+﻿GET http://127.0.0.1:8080/ws
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
 User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
 Accept-Encoding: br, deflate, gzip, x-gzip
 Accept: */*
+content-length: 0
 
-{"Username": "sal", "PasswordHash": "password921"}
+<> 2024-12-27T183144.404.json
 
-<> 2024-10-30T123721.401.txt
+###
+
+GET http://127.0.0.1:8080/ws
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183137.401.json
+
+###
+
+GET http://127.0.0.1:8080/blogs/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183130.200.json
+
+###
+
+GET http://127.0.0.1:8080/blogs/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183123.401.json
+
+###
+
+GET http://127.0.0.1:8080/blocked/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183111.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183100.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183058.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183057.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183056.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183055.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183054.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183053.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T183046.200.json
 
 ###
 
@@ -20,7 +156,18 @@ Accept: */*
 
 {"Username": "sal", "PasswordHash": "password911"}
 
-<> 2024-10-30T123659.200.json
+<> 2024-12-27T183024.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMTg4NywiZXhwIjoxNzM1Mzk4Mjg3LCJpYXQiOjE3MzUzMTE4ODd9.utkHItsLdaI1L2leRvf8XnjAXFkDUIS6qo6KwjJm00I
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T180701.500.txt
 
 ###
 
@@ -33,7 +180,29 @@ Accept: */*
 
 {"Username": "sal", "PasswordHash": "password911"}
 
-<> 2024-10-30T123613.200.json
+<> 2024-12-27T180537.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTIzODY5NiwiZXhwIjoxNzM1MzI1MDk2LCJpYXQiOjE3MzUyMzg2OTZ9.aZHYsdIoX7_n7f9oH7va3_NuLRrJ0QhYE_e4nBrH0YA
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T180257.500.txt
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTIzODY5NiwiZXhwIjoxNzM1MzI1MDk2LCJpYXQiOjE3MzUyMzg2OTZ9.aZHYsdIoX7_n7f9oH7va3_NuLRrJ0QhYE_e4nBrH0YA
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-27T175733.401.txt
 
 ###
 
@@ -46,59 +215,322 @@ Accept: */*
 
 {"Username": "sal", "PasswordHash": "password911"}
 
-<> 2024-10-30T123551.200.json
+<> 2024-12-26T205750.200.json
 
 ###
 
-POST http://127.0.0.1:8080/login
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T003255.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T003228.200.json
+
+###
+
+GET http://127.0.0.1:8080/blocked/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T003223.200.json
+
+###
+
+GET http://127.0.0.1:8080/blogs/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T003155.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T003003.200.json
+
+###
+
+GET http://127.0.0.1:8080/ws
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+Sec-WebSocket-Version: 13
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+###
+
+GET http://127.0.0.1:8080/blogs/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002615.200.json
+
+###
+
+POST http://127.0.0.1:8080/create-blog
 Content-Type: application/json
-Content-Length: 50
+Content-Length: 57
 User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
 Accept-Encoding: br, deflate, gzip, x-gzip
 Accept: */*
 
-{"Username": "sal", "PasswordHash": "password911"}
+{"AuthorId": 1, "Content": "This is my first blog post!"}
 
-<> 2024-10-30T123335.200.json
-
-###
-
-POST http://127.0.0.1:8080/register
-Content-Type: application/json
-Content-Length: 50
-User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
-Accept-Encoding: br, deflate, gzip, x-gzip
-Accept: */*
-
-{"Username": "sal", "PasswordHash": "password911"}
-
-<> 2024-10-30T121301.200.txt
+<> 2024-12-26T002611.200.txt
 
 ###
 
-POST http://127.0.0.1:8080/register
-Content-Type: application/json
-Content-Length: 50
+GET http://127.0.0.1:8080/friends/1
 User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
 Accept-Encoding: br, deflate, gzip, x-gzip
 Accept: */*
+content-length: 0
 
-{"Username": "sal", "PasswordHash": "password911"}
-
-<> 2024-10-30T115633.409.txt
+<> 2024-12-26T002515.200.json
 
 ###
 
-POST http://127.0.0.1:8080/register
-Content-Type: application/json
-Content-Length: 50
+GET http://127.0.0.1:8080/friends/1
 User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
 Accept-Encoding: br, deflate, gzip, x-gzip
 Accept: */*
+content-length: 0
 
-{"Username": "sal", "PasswordHash": "password911"}
+<> 2024-12-26T002514.200.json
 
-<> 2024-10-30T114749.409.txt
+###
+
+GET http://127.0.0.1:8080/blocked/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002504-1.200.json
+
+###
+
+GET http://127.0.0.1:8080/blocked/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002504.200.json
+
+###
+
+GET http://127.0.0.1:8080/blocked/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002503.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002501-2.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002501-1.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002501.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002500.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002459-1.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002459.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002458-1.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002458.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002457-3.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002457-1.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002457.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002456.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002455.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002454-1.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002454.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002453-2.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002453-1.200.json
+
+###
+
+GET http://127.0.0.1:8080/friends/1
+User-Agent: IntelliJ HTTP Client/JetBrains Rider 2024.1.2
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+content-length: 0
+
+<> 2024-12-26T002453.200.json
 
 ###
 

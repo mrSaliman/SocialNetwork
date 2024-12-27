@@ -1,20 +1,40 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using SocialNetwork.Data;
-using SocialNetwork.Models.Auth;
+using SocialNetwork.Models;
 using SocialNetwork.Services;
 
 namespace SocialNetwork;
 
-public partial class Server(string ip, int port)
+public partial class Server
 {
-    private readonly TcpListener _listener = new(IPAddress.Parse(ip), port);
+    private readonly HttpListener _listener;
+    private readonly AuthService _authService;
+    private readonly BlogService _blogService;
+    private readonly GroupService _groupService;
+    private readonly UserService _userService;
 
-    private readonly AuthService _authService = new(JwtKey);
+    public Server(string prefix)
+    {
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile(@"D:\Univ\COURSACHS\NAP\SocialNetwork\SocialNetwork\appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
+
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        _authService = new AuthService(JwtKey, connectionString!);
+        _blogService = new BlogService(connectionString!);
+        _groupService = new GroupService(connectionString!);
+        _userService = new UserService(connectionString!);
+
+        _listener = new HttpListener();
+        _listener.Prefixes.Add(prefix);
+    }
+
     private const string JwtKey = "verysecretverysecretverysecret1234";
-
 
     public async Task Start()
     {
@@ -23,191 +43,265 @@ public partial class Server(string ip, int port)
 
         while (true)
         {
-            var client = await _listener.AcceptTcpClientAsync();
-            _ = Task.Run(() => HandleClient(client));
+            var context = await _listener.GetContextAsync();
+            _ = Task.Run(() => HandleRequest(context));
         }
     }
 
-    private async Task HandleClient(TcpClient client)
+    private async Task HandleRequest(HttpListenerContext context)
     {
-        var stream = client.GetStream();
-        var buffer = new byte[1024];
-        
-        // Читаем запрос от клиента
-        var bytesRead = await stream.ReadAsync(buffer);
-        var request = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-        
-        if (request.Contains("Upgrade: websocket")) 
+        try
         {
-            // Обработка WebSocket подключения
-            await HandleWebSocket(client, request);
+            var request = context.Request;
+            var response = context.Response;
+
+            switch (request.HttpMethod)
+            {
+                case "POST" when request.Url!.AbsolutePath == "/register":
+                    await HandleRegister(request, response);
+                    break;
+                case "POST" when request.Url.AbsolutePath == "/login":
+                    await HandleLogin(request, response);
+                    break;
+                default:
+                {
+                    if (IsRequestAuthorized(request, out var user))
+                    {
+                        await HandleAuthorizedRequest(request, response, user!);
+                    }
+                    else
+                    {
+                        await WriteResponseAsync(response, HttpStatusCode.Unauthorized, "Invalid token.");
+                    }
+
+                    break;
+                }
+            }
         }
-        else 
+        catch (Exception ex)
         {
-            // Обработка HTTP запросов
-            await HandleHttpRequest(client, request);
+            Console.WriteLine($"Error: {ex.Message}");
+            await WriteResponseAsync(context.Response, HttpStatusCode.InternalServerError, ex.Message);
         }
     }
-    
-    private async Task HandleHttpRequest(TcpClient client, string request)
+
+    private async Task HandleRegister(HttpListenerRequest request, HttpListenerResponse response)
     {
-        var stream = client.GetStream();
-        var response = string.Empty;
-
-        if (request.StartsWith("POST /register"))
+        var user = DeserializeRequestBody<User>(request);
+        if (user == null || !_authService.Register(user.Username, user.PasswordHash))
         {
-            var requestBody = GetRequestBody(request);
-            var user = JsonConvert.DeserializeObject<User>(requestBody);
-
-            if (user != null && _authService.Register(user.Username, user.PasswordHash))
-            {
-                response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nUser registered";
-            }
-            else
-            {
-                response = "HTTP/1.1 409 Conflict\r\nContent-Type: text/plain\r\n\r\nUsername already exists";
-            }
+            await WriteResponseAsync(response, HttpStatusCode.Conflict, "Username already exists");
+            return;
         }
-        else if (request.StartsWith("POST /login"))
-        {
-            var requestBody = GetRequestBody(request);
-            var loginData = JsonConvert.DeserializeObject<User>(requestBody);
-            if (loginData != null)
-            {
-                var token = _authService.Login(loginData.Username, loginData.PasswordHash);
 
-                response = token != null
-                    ? $"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{{\"token\": \"{token}\"}}"
-                    : "HTTP/1.1 401 Unauthorized\r\nContent-Type: text/plain\r\n\r\nInvalid credentials";
-            }
+        await WriteResponseAsync(response, HttpStatusCode.OK, "User registered");
+    }
+
+    private async Task HandleLogin(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var loginData = DeserializeRequestBody<User>(request);
+        if (loginData == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        var token = _authService.Login(loginData.Username, loginData.PasswordHash);
+        if (token != null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(new { token }));
         }
         else
         {
-            response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nPage not found";
+            await WriteResponseAsync(response, HttpStatusCode.Unauthorized, "Invalid credentials");
         }
-
-        await stream.WriteAsync(Encoding.UTF8.GetBytes(response));
-        client.Close();
-    }
-    
-    private static string GetRequestBody(string request)
-    {
-        var splitRequest = request.Split("\r\n\r\n", 2);
-        return splitRequest.Length > 1 ? splitRequest[1] : string.Empty;
-    }
-    
-    private static async Task HandleWebSocket(TcpClient client, string request)
-    {
-        var stream = client.GetStream();
-        
-        // Чтение заголовка Sec-WebSocket-Key из запроса
-        var key = MyRegex().Match(request).Groups[1].Value.Trim();
-        var acceptKey = Convert.ToBase64String(
-            System.Security.Cryptography.SHA1.HashData(Encoding.UTF8.GetBytes(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")));
-        
-        // Отправка ответа для установления WebSocket соединения
-        var response = "HTTP/1.1 101 Switching Protocols\r\n" +
-                       "Connection: Upgrade\r\n" +
-                       "Upgrade: websocket\r\n" +
-                       "Sec-WebSocket-Accept: " + acceptKey + "\r\n\r\n";
-        
-        await stream.WriteAsync(Encoding.UTF8.GetBytes(response));
-        
-        // Чтение и обработка WebSocket сообщений
-        var buffer = new byte[1024];
-        while (true)
-        {
-            var bytesRead = await stream.ReadAsync(buffer);
-            if (bytesRead == 0) break;
-
-            var decodedMessage = DecodeWebSocketMessage(buffer);
-            Console.WriteLine("Received message: " + decodedMessage);
-
-            var responseMessage = EncodeWebSocketMessage("Server: " + decodedMessage);
-            await stream.WriteAsync(responseMessage);
-        }
-
-        client.Close();
     }
 
-    private static string DecodeWebSocketMessage(byte[] buffer)
+    private async Task HandleAuthorizedRequest(HttpListenerRequest request, HttpListenerResponse response, User user)
     {
-        var dataStart = 2;
-        var dataLength = buffer[1] & 0x7F;
-
-        dataStart = dataLength switch
+        switch (request.HttpMethod)
         {
-            126 => 4,
-            127 => 10,
-            _ => dataStart
-        };
-
-        var key = new byte[4];
-        Array.Copy(buffer, dataStart - 4, key, 0, 4);
-
-        var decodedMessage = new byte[dataLength];
-        for (var i = 0; i < dataLength; i++)
-        {
-            decodedMessage[i] = (byte)(buffer[i + dataStart] ^ key[i % 4]);
-        }
-
-        return Encoding.UTF8.GetString(decodedMessage);
-    }
-
-    private static byte[] EncodeWebSocketMessage(string message)
-    {
-        var bytesRaw = Encoding.UTF8.GetBytes(message);
-        var frame = new byte[10];
-
-        int indexStartRawData;
-        var length = bytesRaw.Length;
-
-        frame[0] = 129;
-        switch (length)
-        {
-            case <= 125:
-                frame[1] = (byte)length;
-                indexStartRawData = 2;
+            case "POST" when request.Url!.AbsolutePath == "/create-group":
+                await HandleCreateGroup(request, response, user);
                 break;
-            case <= 65535:
-                frame[1] = 126;
-                frame[2] = (byte)((length >> 8) & 255);
-                frame[3] = (byte)(length & 255);
-                indexStartRawData = 4;
+            case "POST" when request.Url.AbsolutePath == "/join-group":
+                await HandleJoinGroup(request, response, user);
+                break;
+            case "POST" when request.Url.AbsolutePath == "/add-friend":
+                await HandleAddFriend(request, response, user);
+                break;
+            case "POST" when request.Url.AbsolutePath == "/block-user":
+                await HandleBlockUser(request, response, user);
+                break;
+            case "GET" when request.Url!.AbsolutePath.StartsWith("/friends/"):
+                await HandleGetFriends(request, response);
+                break;
+            case "GET" when request.Url.AbsolutePath.StartsWith("/blocked/"):
+                await HandleGetBlockedUsers(request, response);
+                break;
+            case "POST" when request.Url.AbsolutePath == "/create-blog":
+                await HandleCreateBlog(request, response, user);
+                break;
+            case "GET" when request.Url.AbsolutePath.StartsWith("/blogs/"):
+                await HandleGetBlogs(request, response);
                 break;
             default:
-                frame[1] = 127;
-                frame[2] = (byte)((length >> 56) & 255);
-                frame[3] = (byte)((length >> 48) & 255);
-                frame[4] = (byte)((length >> 40) & 255);
-                frame[5] = (byte)((length >> 32) & 255);
-                frame[6] = (byte)((length >> 24) & 255);
-                frame[7] = (byte)((length >> 16) & 255);
-                frame[8] = (byte)((length >> 8) & 255);
-                frame[9] = (byte)(length & 255);
-
-                indexStartRawData = 10;
+                await WriteResponseAsync(response, HttpStatusCode.NotFound, "Route not found");
                 break;
         }
-
-        var response = new byte[indexStartRawData + length];
-        int i, responseIdx = 0;
-
-        for (i = 0; i < indexStartRawData; i++)
-        {
-            response[responseIdx] = frame[i];
-            responseIdx++;
-        }
-
-        for (i = 0; i < length; i++)
-        {
-            response[responseIdx] = bytesRaw[i];
-            responseIdx++;
-        }
-
-        return response;
     }
 
-    [System.Text.RegularExpressions.GeneratedRegex("Sec-WebSocket-Key: (.*)")]
-    private static partial System.Text.RegularExpressions.Regex MyRegex();
+    private async Task HandleCreateGroup(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var groupData = DeserializeRequestBody<GroupRequest>(request);
+        if (groupData == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        _groupService.CreateGroup(groupData.Name, user.Id);
+        await WriteResponseAsync(response, HttpStatusCode.OK, "Group created");
+    }
+
+    private async Task HandleJoinGroup(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var joinData = DeserializeRequestBody<GroupJoinRequest>(request);
+        if (joinData == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        var result = _groupService.AddMember(joinData.GroupName, user.Id);
+        await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "Joined group" : "Could not join group");
+    }
+
+    private async Task HandleAddFriend(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var data = DeserializeRequestBody<FriendRequest>(request);
+        if (data == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        var result = _userService.AddFriend(user.Id, data.FriendId);
+        await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "Friend added successfully" : "Friend already added");
+    }
+
+    private async Task HandleBlockUser(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var data = DeserializeRequestBody<FriendRequest>(request);
+        if (data == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        var result = _userService.BlockUser(user.Id, data.FriendId);
+        await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "User blocked successfully" : "User already blocked");
+    }
+
+    private async Task HandleGetFriends(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var userId = GetUserIdFromRequest(request);
+        if (!userId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
+            return;
+        }
+
+        var friends = _userService.GetFriends(userId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(friends));
+    }
+
+    private async Task HandleGetBlockedUsers(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var userId = GetUserIdFromRequest(request);
+        if (!userId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
+            return;
+        }
+
+        var blockedUsers = _userService.GetBlockedUsers(userId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(blockedUsers));
+    }
+
+    private async Task HandleCreateBlog(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var blogPost = DeserializeRequestBody<BlogPost>(request);
+        if (blogPost == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        _blogService.CreatePost(user.Id, blogPost.Content);
+        await WriteResponseAsync(response, HttpStatusCode.OK, "Blog post created");
+    }
+
+    private async Task HandleGetBlogs(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var userId = GetUserIdFromRequest(request);
+        if (!userId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
+            return;
+        }
+
+        var posts = _blogService.GetAllPosts(userId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(posts));
+    }
+
+    private bool IsRequestAuthorized(HttpListenerRequest request, out User? userId)
+    {
+        userId = null;
+        var tokenHeader = request.Headers["Authorization"];
+        if (string.IsNullOrEmpty(tokenHeader) || !tokenHeader.StartsWith("Bearer ")) return false;
+
+        var token = tokenHeader.Substring("Bearer ".Length).Trim();
+        userId = _authService.ValidateToken(token);
+        return userId != null;
+    }
+
+    private static int? GetUserIdFromRequest(HttpListenerRequest request)
+    {
+        var match = GetIdRegex().Match(request.Url!.AbsolutePath);
+        if (match.Success)
+        {
+            return int.Parse(match.Groups[2].Value);
+        }
+
+        return null;
+    }
+
+    private static T? DeserializeRequestBody<T>(HttpListenerRequest request) where T : class
+    {
+        try
+        {
+            using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
+            var body = reader.ReadToEnd();
+            return JsonConvert.DeserializeObject<T>(body);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static async Task WriteResponseAsync(HttpListenerResponse response, HttpStatusCode statusCode, string responseBody)
+    {
+        response.StatusCode = (int)statusCode;
+        response.ContentType = "application/json";
+        var responseBytes = Encoding.UTF8.GetBytes(responseBody);
+        response.ContentLength64 = responseBytes.Length;
+
+        await response.OutputStream.WriteAsync(responseBytes);
+        response.Close();
+    }
+
+    [GeneratedRegex(@"^/(friends|blocked|blogs)/(\d+)$")]
+    private static partial Regex GetIdRegex();
 }

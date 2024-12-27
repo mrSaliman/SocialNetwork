@@ -3,9 +3,9 @@
 using SocialNetwork.Data;
 using SocialNetwork.Models;
 
-public class MessageService
+public class MessageService(string connectionString)
 {
-    private readonly MessageRepository _messageRepository = new(@"Data Source=D:\Univ\COURSACHS\NAP\SocialNetwork\SocialNetwork\DB\SocialNetwork.db");
+    private readonly MessageRepository _messageRepository = new(connectionString);
 
     public bool SendMessage(int senderId, int receiverId, string content)
     {

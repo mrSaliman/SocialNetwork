@@ -1,5 +1,5 @@
 ﻿using System.Data.SQLite;
-using SocialNetwork.Models.Auth;
+using SocialNetwork.Models;
 
 namespace SocialNetwork.Data;
 
