@@ -6,7 +6,7 @@ namespace SocialNetwork;
 
 public class ChatGroup(string name)
 {
-    public string Name { get; } = name;
+    private string Name { get; } = name;
     private readonly List<WebSocket> _clients = [];
     private readonly SemaphoreSlim _lock = new(1, 1);
 
