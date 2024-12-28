@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Concurrent;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,7 @@ public partial class Server
     private readonly BlogService _blogService;
     private readonly GroupService _groupService;
     private readonly UserService _userService;
+    private readonly ConcurrentDictionary<string, ChatGroup> _chatGroups = [];
 
     public Server(string prefix)
     {
@@ -36,15 +38,32 @@ public partial class Server
 
     private const string JwtKey = "verysecretverysecretverysecret1234";
 
-    public async Task Start()
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         _listener.Start();
         Console.WriteLine("Server started.");
 
-        while (true)
+        while (!cancellationToken.IsCancellationRequested)
         {
             var context = await _listener.GetContextAsync();
-            _ = Task.Run(() => HandleRequest(context));
+            if (context.Request.IsWebSocketRequest)
+            {
+                var groupName = context.Request.QueryString["GroupName"];
+                if (string.IsNullOrEmpty(groupName))
+                {
+                    context.Response.StatusCode = 400;
+                    context.Response.StatusDescription = "GroupName query parameter is required.";
+                    context.Response.Close();
+                    continue;
+                }
+
+                var chatGroup = _chatGroups.GetOrAdd(groupName, name => new ChatGroup(name));
+                await chatGroup.AddClientAsync(context);
+            }
+            else
+            {
+                _ = Task.Run(() => HandleRequest(context), cancellationToken);
+            }
         }
     }
 
