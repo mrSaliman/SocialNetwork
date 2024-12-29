@@ -1,7 +1,7 @@
-﻿namespace SocialNetwork.Services;
-
-using SocialNetwork.Data;
+﻿using SocialNetwork.Data;
 using SocialNetwork.Models;
+
+namespace SocialNetwork.Services;
 
 public class BlogService(string connectionString)
 {

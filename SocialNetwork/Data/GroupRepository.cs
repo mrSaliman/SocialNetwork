@@ -4,15 +4,10 @@ using Models;
 
 public class GroupRepository(string connectionString)
 {
-    public bool CreateGroup(Group group)
+    public int CreateGroup(Group group)
     {
         using var connection = new SQLiteConnection(connectionString);
         connection.Open();
-
-        if (GetGroupIdByName(group.Name) != null)
-        {
-            return false;
-        }
 
         using var command = new SQLiteCommand(connection);
         command.CommandText = "INSERT INTO Groups (Name) VALUES (@name)";
@@ -21,11 +16,11 @@ public class GroupRepository(string connectionString)
         try
         {
             command.ExecuteNonQuery();
-            return true;
+            return (int)connection.LastInsertRowId;
         }
         catch (SQLiteException)
         {
-            return false;
+            return -1;
         }
     }
 
@@ -34,7 +29,6 @@ public class GroupRepository(string connectionString)
         using var connection = new SQLiteConnection(connectionString);
         connection.Open();
 
-        
         using var checkCommand = new SQLiteCommand(connection);
         checkCommand.CommandText = "SELECT COUNT(1) FROM GroupMembers WHERE GroupId = @groupId AND UserId = @userId";
         checkCommand.Parameters.AddWithValue("@groupId", member.GroupId);
@@ -62,20 +56,68 @@ public class GroupRepository(string connectionString)
         }
     }
 
-    public int? GetGroupIdByName(string groupName)
+    public List<Group> GetGroups(int userId)
+    {
+        var groups = new List<Group>();
+
+        using var connection = new SQLiteConnection(connectionString);
+        connection.Open();
+
+        using var command = new SQLiteCommand(connection);
+        command.CommandText = @"
+        SELECT g.Id, g.Name
+        FROM Groups g
+        INNER JOIN GroupMembers gm ON g.Id = gm.GroupId
+        WHERE gm.UserId = @userId";
+        command.Parameters.AddWithValue("@userId", userId);
+
+        try
+        {
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var group = new Group
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1)
+                };
+                groups.Add(group);
+            }
+        }
+        catch (SQLiteException ex)
+        {
+            Console.WriteLine($"Error retrieving groups: {ex.Message}");
+        }
+
+        return groups;
+    }
+
+    public Group? GetGroup(int groupId)
     {
         using var connection = new SQLiteConnection(connectionString);
         connection.Open();
 
         using var command = new SQLiteCommand(connection);
-        command.CommandText = "SELECT Id FROM Groups WHERE Name = @name";
-        command.Parameters.AddWithValue("@name", groupName);
+        command.CommandText = "SELECT Id, Name FROM Groups WHERE Id = @groupId";
+        command.Parameters.AddWithValue("@groupId", groupId);
 
-        using var reader = command.ExecuteReader();
-        if (reader.Read())
+        try
         {
-            return reader.GetInt32(0);
+            using var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                return new Group
+                {
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1)
+                };
+            }
         }
+        catch (SQLiteException ex)
+        {
+            Console.WriteLine($"Error retrieving group: {ex.Message}");
+        }
+
         return null;
     }
 }

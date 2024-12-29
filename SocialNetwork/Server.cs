@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using SocialNetwork.Models;
 using SocialNetwork.Services;
+using Group = SocialNetwork.Models.Group;
 
 namespace SocialNetwork;
 
@@ -16,7 +17,8 @@ public partial class Server
     private readonly BlogService _blogService;
     private readonly GroupService _groupService;
     private readonly UserService _userService;
-    private readonly ConcurrentDictionary<string, ChatGroup> _chatGroups = [];
+    private readonly MessageService _messageService;
+    private readonly ConcurrentDictionary<int, ChatGroup> _chatGroups = [];
 
     public Server(string prefix)
     {
@@ -31,6 +33,7 @@ public partial class Server
         _blogService = new BlogService(connectionString!);
         _groupService = new GroupService(connectionString!);
         _userService = new UserService(connectionString!);
+        _messageService = new MessageService(connectionString!);
 
         _listener = new HttpListener();
         _listener.Prefixes.Add(prefix);
@@ -48,17 +51,39 @@ public partial class Server
             var context = await _listener.GetContextAsync();
             if (context.Request.IsWebSocketRequest)
             {
-                var groupName = context.Request.QueryString["GroupName"];
-                if (string.IsNullOrEmpty(groupName))
+                var type = context.Request.QueryString["Type"];
+                if (string.IsNullOrEmpty(type) || type != "Join")
+                {
+                    continue;
+                }
+                
+                var tokenString = context.Request.QueryString["Token"];
+                if (string.IsNullOrEmpty(tokenString) || !IsTokenAuthorized(tokenString, out var user))
+                {
+                    await WriteResponseAsync(context.Response, HttpStatusCode.Unauthorized, "Invalid token.");
+                    continue;
+                }
+                
+                var groupIdString = context.Request.QueryString["GroupId"];
+                if (string.IsNullOrEmpty(groupIdString))
                 {
                     context.Response.StatusCode = 400;
-                    context.Response.StatusDescription = "GroupName query parameter is required.";
+                    context.Response.StatusDescription = "GroupId query parameter is required.";
+                    context.Response.Close();
+                    continue;
+                }
+                var group = _groupService.GetGroup(int.Parse(groupIdString));
+                if (group == null)
+                {
+                    context.Response.StatusCode = 400;
+                    context.Response.StatusDescription = "There are no groups with such id.";
                     context.Response.Close();
                     continue;
                 }
 
-                var chatGroup = _chatGroups.GetOrAdd(groupName, name => new ChatGroup(name));
-                await chatGroup.AddClientAsync(context);
+                var chatGroup = _chatGroups.GetOrAdd(group.Id, CreateChatGroup(group));
+
+                _ = chatGroup.AddClientAsync(context, user!);
             }
             else
             {
@@ -73,6 +98,15 @@ public partial class Server
         {
             var request = context.Request;
             var response = context.Response;
+            
+            AddCorsHeaders(response);
+
+            if (request.HttpMethod == "OPTIONS")
+            {
+                response.StatusCode = (int)HttpStatusCode.OK;
+                response.Close();
+                return;
+            }
 
             switch (request.HttpMethod)
             {
@@ -144,16 +178,37 @@ public partial class Server
                 await HandleCreateGroup(request, response, user);
                 break;
             case "POST" when request.Url.AbsolutePath == "/join-group":
-                await HandleJoinGroup(request, response, user);
+                await HandleJoinGroup(request, response);
+                break;
+            case "GET" when request.Url!.AbsolutePath == "/groups":
+                await HandleGetGroups(response, user);
+                break;
+            case "GET" when request.Url!.AbsolutePath.StartsWith("/group/"):
+                await HandleGetGroup(request, response);
+                break;
+            case "GET" when request.Url!.AbsolutePath.StartsWith("/messages/"):
+                await HandleGetMessages(request, response);
                 break;
             case "POST" when request.Url.AbsolutePath == "/add-friend":
                 await HandleAddFriend(request, response, user);
                 break;
+            case "POST" when request.Url.AbsolutePath == "/remove-friend":
+                await HandleRemoveFriend(request, response, user);
+                break;
             case "POST" when request.Url.AbsolutePath == "/block-user":
                 await HandleBlockUser(request, response, user);
                 break;
+            case "POST" when request.Url.AbsolutePath == "/unblock-user":
+                await HandleUnblockUser(request, response, user);
+                break;
             case "GET" when request.Url!.AbsolutePath.StartsWith("/friends/"):
                 await HandleGetFriends(request, response);
+                break;
+            case "GET" when request.Url!.AbsolutePath.StartsWith("/group-friends/"):
+                await HandleGetGroupFriends(request, response, user);
+                break;
+            case "GET" when request.Url!.AbsolutePath.StartsWith("/not-friends/"):
+                await HandleGetNotFriends(request, response);
                 break;
             case "GET" when request.Url.AbsolutePath.StartsWith("/blocked/"):
                 await HandleGetBlockedUsers(request, response);
@@ -164,10 +219,20 @@ public partial class Server
             case "GET" when request.Url.AbsolutePath.StartsWith("/blogs/"):
                 await HandleGetBlogs(request, response);
                 break;
+            case "GET" when request.Url.AbsolutePath.StartsWith("/user/"):
+                await HandleGetUser(request, response);
+                break;
             default:
                 await WriteResponseAsync(response, HttpStatusCode.NotFound, "Route not found");
                 break;
         }
+    }
+    
+    private static void AddCorsHeaders(HttpListenerResponse response)
+    {
+        response.Headers.Add("Access-Control-Allow-Origin", "*"); 
+        response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); 
+        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization, ngrok-skip-browser-warning"); 
     }
 
     private async Task HandleCreateGroup(HttpListenerRequest request, HttpListenerResponse response, User user)
@@ -179,11 +244,11 @@ public partial class Server
             return;
         }
 
-        _groupService.CreateGroup(groupData.Name, user.Id);
-        await WriteResponseAsync(response, HttpStatusCode.OK, "Group created");
+        var groupId = _groupService.CreateGroup(groupData.Name, user.Id);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(groupId));
     }
 
-    private async Task HandleJoinGroup(HttpListenerRequest request, HttpListenerResponse response, User user)
+    private async Task HandleJoinGroup(HttpListenerRequest request, HttpListenerResponse response)
     {
         var joinData = DeserializeRequestBody<GroupJoinRequest>(request);
         if (joinData == null)
@@ -192,8 +257,27 @@ public partial class Server
             return;
         }
 
-        var result = _groupService.AddMember(joinData.GroupName, user.Id);
+        var result = _groupService.AddMember(joinData.GroupId, joinData.FriendId);
         await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "Joined group" : "Could not join group");
+    }
+    
+    private async Task HandleGetGroups(HttpListenerResponse response, User user)
+    {
+        var result = _groupService.GetGroups(user.Id);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(result));
+    }
+    
+    private async Task HandleGetGroup(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var groupId = GetIdFromRequest(request);
+        if (!groupId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid group ID.");
+            return;
+        }
+
+        var result = _groupService.GetGroup(groupId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(result));
     }
 
     private async Task HandleAddFriend(HttpListenerRequest request, HttpListenerResponse response, User user)
@@ -206,6 +290,32 @@ public partial class Server
         }
 
         var result = _userService.AddFriend(user.Id, data.FriendId);
+        await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "Friend added successfully" : "Friend already added");
+    }
+    
+    private async Task HandleGetMessages(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var groupId = GetIdFromRequest(request);
+        if (!groupId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid group ID.");
+            return;
+        }
+
+        var messages = _messageService.GetMessages(groupId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(messages));
+    }
+    
+    private async Task HandleRemoveFriend(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var data = DeserializeRequestBody<FriendRequest>(request);
+        if (data == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        var result = _userService.RemoveFriend(user.Id, data.FriendId);
         await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "Friend added successfully" : "Friend already added");
     }
 
@@ -221,10 +331,23 @@ public partial class Server
         var result = _userService.BlockUser(user.Id, data.FriendId);
         await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "User blocked successfully" : "User already blocked");
     }
+    
+    private async Task HandleUnblockUser(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var data = DeserializeRequestBody<FriendRequest>(request);
+        if (data == null)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid request body");
+            return;
+        }
+
+        var result = _userService.UnblockUser(user.Id, data.FriendId);
+        await WriteResponseAsync(response, result ? HttpStatusCode.OK : HttpStatusCode.BadRequest, result ? "User blocked successfully" : "User already blocked");
+    }
 
     private async Task HandleGetFriends(HttpListenerRequest request, HttpListenerResponse response)
     {
-        var userId = GetUserIdFromRequest(request);
+        var userId = GetIdFromRequest(request);
         if (!userId.HasValue)
         {
             await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
@@ -234,10 +357,36 @@ public partial class Server
         var friends = _userService.GetFriends(userId.Value);
         await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(friends));
     }
+    
+    private async Task HandleGetGroupFriends(HttpListenerRequest request, HttpListenerResponse response, User user)
+    {
+        var groupId = GetIdFromRequest(request);
+        if (!groupId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
+            return;
+        }
+
+        var friends = _userService.GetGroupFriends(user.Id, groupId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(friends));
+    }
+    
+    private async Task HandleGetNotFriends(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var userId = GetIdFromRequest(request);
+        if (!userId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
+            return;
+        }
+
+        var friends = _userService.GetNotFriends(userId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(friends));
+    }
 
     private async Task HandleGetBlockedUsers(HttpListenerRequest request, HttpListenerResponse response)
     {
-        var userId = GetUserIdFromRequest(request);
+        var userId = GetIdFromRequest(request);
         if (!userId.HasValue)
         {
             await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
@@ -263,7 +412,7 @@ public partial class Server
 
     private async Task HandleGetBlogs(HttpListenerRequest request, HttpListenerResponse response)
     {
-        var userId = GetUserIdFromRequest(request);
+        var userId = GetIdFromRequest(request);
         if (!userId.HasValue)
         {
             await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
@@ -273,6 +422,19 @@ public partial class Server
         var posts = _blogService.GetAllPosts(userId.Value);
         await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(posts));
     }
+    
+    private async Task HandleGetUser(HttpListenerRequest request, HttpListenerResponse response)
+    {
+        var userId = GetIdFromRequest(request);
+        if (!userId.HasValue)
+        {
+            await WriteResponseAsync(response, HttpStatusCode.BadRequest, "Invalid user ID.");
+            return;
+        }
+
+        var user = _userService.GetUserById(userId.Value);
+        await WriteResponseAsync(response, HttpStatusCode.OK, JsonConvert.SerializeObject(user));
+    }
 
     private bool IsRequestAuthorized(HttpListenerRequest request, out User? userId)
     {
@@ -280,12 +442,18 @@ public partial class Server
         var tokenHeader = request.Headers["Authorization"];
         if (string.IsNullOrEmpty(tokenHeader) || !tokenHeader.StartsWith("Bearer ")) return false;
 
-        var token = tokenHeader.Substring("Bearer ".Length).Trim();
+        var token = tokenHeader["Bearer ".Length..].Trim();
         userId = _authService.ValidateToken(token);
         return userId != null;
     }
+    
+    private bool IsTokenAuthorized(string token, out User? user)
+    {
+        user = _authService.ValidateToken(token);
+        return user != null;
+    }
 
-    private static int? GetUserIdFromRequest(HttpListenerRequest request)
+    private static int? GetIdFromRequest(HttpListenerRequest request)
     {
         var match = GetIdRegex().Match(request.Url!.AbsolutePath);
         if (match.Success)
@@ -321,6 +489,8 @@ public partial class Server
         response.Close();
     }
 
-    [GeneratedRegex(@"^/(friends|blocked|blogs)/(\d+)$")]
+    [GeneratedRegex(@"^/(friends|blocked|blogs|user|not-friends|messages|group|group-friends)/(\d+)$")]
     private static partial Regex GetIdRegex();
+    
+    private ChatGroup CreateChatGroup(Group group) => new(group, _messageService);
 }

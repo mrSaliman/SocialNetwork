@@ -31,7 +31,7 @@ public class BlogRepository(string connectionString)
         using var connection = new SQLiteConnection(connectionString);
         connection.Open();
 
-        var command = new SQLiteCommand("SELECT AuthorId, Content, Timestamp FROM BlogPosts WHERE AuthorId = @userId;", connection);
+        var command = new SQLiteCommand("SELECT * FROM BlogPosts WHERE AuthorId = @userId;", connection);
     
         command.Parameters.AddWithValue("@userId", userId);
 
@@ -42,9 +42,10 @@ public class BlogRepository(string connectionString)
         {
             posts.Add(new BlogPost
             {
-                AuthorId = reader.GetInt32(0),
-                Content = reader.GetString(1),
-                Timestamp = reader.GetDateTime(2)
+                Id = reader.GetInt32(0),
+                AuthorId = reader.GetInt32(1),
+                Content = reader.GetString(2),
+                Timestamp = reader.GetDateTime(3)
             });
         }
 

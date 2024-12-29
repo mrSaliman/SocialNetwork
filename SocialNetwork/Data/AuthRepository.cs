@@ -48,4 +48,27 @@ public class AuthRepository(string connectionString)
 
         return null;
     }
+    
+    public User? GetUserById(int id)
+    {
+        using var connection = new SQLiteConnection(connectionString);
+        connection.Open();
+
+        using var command = new SQLiteCommand(connection);
+        command.CommandText = "SELECT * FROM Users WHERE Id = @id";
+        command.Parameters.AddWithValue("@id", id);
+
+        using var reader = command.ExecuteReader();
+        if (reader.Read())
+        {
+            return new User
+            {
+                Id = reader.GetInt32(0),
+                Username = reader.GetString(1),
+                PasswordHash = reader.GetString(2)
+            };
+        }
+
+        return null;
+    }
 }

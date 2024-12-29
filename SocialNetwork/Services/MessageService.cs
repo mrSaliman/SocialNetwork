@@ -1,22 +1,19 @@
-﻿namespace SocialNetwork.Services;
-
-using SocialNetwork.Data;
+﻿using SocialNetwork.Data;
 using SocialNetwork.Models;
+
+namespace SocialNetwork.Services;
 
 public class MessageService(string connectionString)
 {
     private readonly MessageRepository _messageRepository = new(connectionString);
 
-    public bool SendMessage(int senderId, int receiverId, string content)
+    public int SendMessage(Message message)
     {
-        var message = new Message
-        {
-            SenderId = senderId,
-            ReceiverId = receiverId,
-            Content = content,
-            Timestamp = DateTime.UtcNow
-        };
-
         return _messageRepository.SendMessage(message);
+    }
+
+    public List<MessageResponse> GetMessages(int receiverId)
+    {
+        return _messageRepository.GetMessages(receiverId);
     }
 }

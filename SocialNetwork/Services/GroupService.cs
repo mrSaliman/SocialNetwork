@@ -1,29 +1,33 @@
-﻿namespace SocialNetwork.Services;
-
+﻿using SocialNetwork.Models;
 using SocialNetwork.Data;
-using SocialNetwork.Models;
+
+namespace SocialNetwork.Services;
 
 public class GroupService(string connectionString)
 {
     private readonly GroupRepository _groupRepository = new(connectionString);
 
-    public bool CreateGroup(string name, int creatorId)
+    public int CreateGroup(string name, int creatorId)
     {
         var group = new Group { Name = name };
-        var created = _groupRepository.CreateGroup(group);
-        if (created)
+        var createdId = _groupRepository.CreateGroup(group);
+        if (createdId != -1)
         {
-            AddMember(name, creatorId);
+            AddMember(createdId, creatorId);
         }
 
-        return created;
+        return createdId;
     }
 
-    public bool AddMember(string groupName, int userId)
+    public bool AddMember(int groupId, int userId)
     {
-        var groupId = _groupRepository.GetGroupIdByName(groupName);
-        if (!groupId.HasValue) return false;
-        var member = new GroupMember { GroupId = groupId.Value, UserId = userId };
+        var member = new GroupMember { GroupId = groupId, UserId = userId };
         return _groupRepository.AddMember(member);
     }
+    
+    public List<Group> GetGroups(int userId) =>
+        _groupRepository.GetGroups(userId);
+    
+    public Group? GetGroup(int groupId) =>
+        _groupRepository.GetGroup(groupId);
 }

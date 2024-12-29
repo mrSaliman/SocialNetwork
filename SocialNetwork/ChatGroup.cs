@@ -1,16 +1,19 @@
 ﻿using System.Net;
 using System.Net.WebSockets;
 using System.Text;
+using Newtonsoft.Json;
+using SocialNetwork.Models;
+using SocialNetwork.Services;
 
 namespace SocialNetwork;
 
-public class ChatGroup(string name)
+public class ChatGroup(Group group, MessageService messageService)
 {
-    private string Name { get; } = name;
-    private readonly List<WebSocket> _clients = [];
+    private Group Group { get; } = group;
+    private readonly Dictionary<WebSocket, User> _clients = new();
     private readonly SemaphoreSlim _lock = new(1, 1);
 
-    public async Task AddClientAsync(HttpListenerContext context)
+    public async Task AddClientAsync(HttpListenerContext context, User user)
     {
         WebSocket? webSocket = null;
 
@@ -20,8 +23,8 @@ public class ChatGroup(string name)
             webSocket = webSocketContext.WebSocket;
 
             await _lock.WaitAsync();
-            _clients.Add(webSocket);
-            Console.WriteLine($"Client added to group '{Name}'.");
+            _clients.Add(webSocket, user);
+            Console.WriteLine($"Client '{user.Username}' added to group '{Group.Name}'.");
 
             _lock.Release();
 
@@ -29,10 +32,11 @@ public class ChatGroup(string name)
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error adding client to group '{Name}': {ex.Message}");
+            Console.WriteLine($"Error with client '{user.Username}' in group '{Group.Name}': {ex.Message}");
             webSocket?.Dispose();
         }
     }
+
 
     private async Task ReceiveMessagesAsync(WebSocket webSocket)
     {
@@ -46,9 +50,18 @@ public class ChatGroup(string name)
                 case WebSocketMessageType.Text:
                 {
                     var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                    Console.WriteLine($"Received message in group '{Name}': {message}");
 
-                    await BroadcastMessageAsync(message, webSocket);
+                    var request = JsonConvert.DeserializeObject<MessageRequest>(message);
+                    if (request is not { Type: "Message" })
+                    {
+                        continue;
+                    }
+                    
+                    if (_clients.TryGetValue(webSocket, out var user))
+                    {
+                        Console.WriteLine($"Received message from '{user.Username}' in group '{Group.Name}': {request.Content}");
+                        await BroadcastMessageAsync(user, request.Content, webSocket);
+                    }
                     break;
                 }
                 case WebSocketMessageType.Close:
@@ -62,14 +75,35 @@ public class ChatGroup(string name)
         }
     }
 
-    private async Task BroadcastMessageAsync(string message, WebSocket sender)
+    private async Task BroadcastMessageAsync(User sender, string message, WebSocket senderSocket)
     {
-        var messageBuffer = Encoding.UTF8.GetBytes(message);
+        var dbMessageModel = new Message
+        {
+            SenderId = sender.Id,
+            ReceiverId = Group.Id,
+            Content = message,
+            Timestamp = DateTime.UtcNow
+        };
 
         await _lock.WaitAsync();
         try
         {
-            foreach (var client in _clients.Where(client => client != sender && client.State == WebSocketState.Open))
+            var id = messageService.SendMessage(dbMessageModel);
+            
+            var messageModel = new MessageResponse
+            {
+                Id = id,
+                Sender = sender,
+                ReceiverId = Group.Id,
+                Content = message,
+                Timestamp = DateTime.UtcNow
+            };
+            
+            message = JsonConvert.SerializeObject(messageModel);
+        
+            var messageBuffer = Encoding.UTF8.GetBytes(message);
+            
+            foreach (var client in _clients.Keys.Where(client => client != senderSocket && client.State == WebSocketState.Open))
             {
                 await client.SendAsync(new ArraySegment<byte>(messageBuffer), WebSocketMessageType.Text, true, CancellationToken.None);
             }
@@ -85,9 +119,9 @@ public class ChatGroup(string name)
         await _lock.WaitAsync();
         try
         {
-            if (_clients.Remove(webSocket))
+            if (_clients.Remove(webSocket, out var user))
             {
-                Console.WriteLine($"Client removed from group '{Name}'.");
+                Console.WriteLine($"Client '{user.Username}' removed from group '{Group.Name}'.");
             }
         }
         finally

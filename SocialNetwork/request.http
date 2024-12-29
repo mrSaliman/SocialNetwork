@@ -12,15 +12,16 @@ Content-Type: application/json
 ###
 
 POST 127.0.0.1:8080/add-friend HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJuYmYiOjE3MzU0MDMyNTQsImV4cCI6MTczNTQ4OTY1NCwiaWF0IjoxNzM1NDAzMjU0fQ.znjeTLCGLiCocb3hUn2JJHZ52-oKrtN1cH3CD6BYVTM
 Content-Type: application/json
 
-{"UserId": 1, "FriendId": 2}
+{"FriendId": 2}
 
 ###
 POST 127.0.0.1:8080/block-user HTTP/1.1
 Content-Type: application/json
 
-{"UserId": 1, "FriendId": 2}
+{"FriendId": 2}
 ###
 GET 127.0.0.1:8080/friends/1 HTTP/1.1
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
@@ -34,7 +35,7 @@ Content-Type: application/json
 {"AuthorId": 1, "Content": "This is my first blog post!"}
 ###
 GET 127.0.0.1:8080/blogs/1 HTTP/1.1
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNhbCIsIm5iZiI6MTczNTMxMzQyNCwiZXhwIjoxNzM1Mzk5ODI0LCJpYXQiOjE3MzUzMTM0MjR9.P8T_Xe4txj26PJpAUZh0Scl2wc53HgAybj8AtnlRkxo
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEiLCJuYmYiOjE3MzU0MDMyNTQsImV4cCI6MTczNTQ4OTY1NCwiaWF0IjoxNzM1NDAzMjU0fQ.znjeTLCGLiCocb3hUn2JJHZ52-oKrtN1cH3CD6BYVTM
 ###
 GET 127.0.0.1:8080/ws HTTP/1.1
 Upgrade: websocket

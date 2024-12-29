@@ -14,6 +14,7 @@ public class AuthService(string jwtKey, string connectionString)
     public bool Register(string username, string password)
     {
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        if (_authRepository.GetUserByUsername(username) != null) return false;
         var user = new User { Username = username, PasswordHash = passwordHash };
         return _authRepository.AddUser(user);
     }
@@ -26,12 +27,11 @@ public class AuthService(string jwtKey, string connectionString)
             return null;
         }
 
-        var token = GenerateJwtToken(user.Username);
-        Console.WriteLine(token);
+        var token = GenerateJwtToken(user.Id);
         return token;
     }
 
-    private string? GenerateJwtToken(string username)
+    private string? GenerateJwtToken(int id)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(jwtKey);
@@ -45,7 +45,7 @@ public class AuthService(string jwtKey, string connectionString)
         {
             Subject = new ClaimsIdentity(new Claim[]
             {
-                new(ClaimTypes.Name, username)
+                new("id", id.ToString())
             }),
             Expires = DateTime.UtcNow.AddHours(24),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -59,8 +59,6 @@ public class AuthService(string jwtKey, string connectionString)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(jwtKey);
-        var jwt = tokenHandler.ReadJwtToken(token);
-        Console.WriteLine($"Algorithm: {jwt.Header["alg"]}");
 
         try
         {
@@ -79,8 +77,8 @@ public class AuthService(string jwtKey, string connectionString)
                 return null;
             }
 
-            var usernameClaim = principal.FindFirst(ClaimTypes.Name);
-            return usernameClaim == null ? null : _authRepository.GetUserByUsername(usernameClaim.Value);
+            var idClaim = principal.FindFirst("id");
+            return idClaim == null ? null : _authRepository.GetUserById(int.Parse(idClaim.Value));
         }
         catch
         {
